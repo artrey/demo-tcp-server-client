@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 
 namespace DemoTcpServer
@@ -50,6 +49,7 @@ namespace DemoTcpServer
                 Console.WriteLine($@"{DateTime.Now} | Client connected...");
                 var ips = (client.Client.RemoteEndPoint as IPEndPoint).Address.ToString()
                     .Split('.').Select(s => byte.Parse(s)).ToArray();
+                var random = new Random((int)(DateTime.Now.Ticks % int.MaxValue));
 
                 // получаем сетевой поток для чтения и записи
                 NetworkStream stream = client.GetStream();
@@ -58,17 +58,26 @@ namespace DemoTcpServer
                 {
                     try
                     {
+                        var m = new Message();
+                        var dt = DateTime.Now;
+                        var count = random.Next() % 3;
+                        m.AddData(ips[0]).AddData(ips[1]).AddData(ips[2]).AddData(ips[3]);
+                        m.AddData((byte)dt.Hour).AddData((byte)dt.Minute).AddData((byte)dt.Second);
+                        for (int i = 0; i < count; ++i)
+                        {
+                            m.AddData((byte)(random.Next() % 255));
+                        }
+
                         // преобразуем сообщение в массив байтов
-                        byte[] data = new byte[] { 0x3f, 0xe4, ips[0], ips[1], ips[2], ips[3] };
+                        byte[] data = m.Data;
+                        var size = random.Next() % (data.Length - 1);
                         // отправка сообщения
-                        stream.Write(data, 0, data.Length);
+                        stream.Write(data, 0, size);
 
                         Thread.Sleep(200);
 
-                        var dt = DateTime.Now;
-                        data = new byte[] { (byte)dt.Hour, (byte)dt.Minute, (byte)dt.Second, 0xf3 };
                         // отправка сообщения
-                        stream.Write(data, 0, data.Length);
+                        stream.Write(data, size, data.Length - size);
                     }
                     catch (Exception) { }
 

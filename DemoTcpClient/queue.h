@@ -21,7 +21,7 @@ void free_queue(queue_t* q);
 bool queue_enqueue(queue_t* q, value_type elem);
 bool queue_dequeue(queue_t* q, value_type* elem);
 
-bool queue_watch(queue_t* q, value_type* elem);
+bool queue_watch(queue_t* q, value_type* elem, size_t idx);
 
 void queue_clear(queue_t* q);
 

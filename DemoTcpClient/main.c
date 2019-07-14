@@ -5,7 +5,20 @@
 
 #pragma comment(lib, "ws2_32.lib") //Winsock Library
 
-#define MAX_PROTOCOL_LENGTH 10
+#define MAX_PROTOCOL_LENGTH 12
+
+union message
+{
+	uint8_t data[MAX_PROTOCOL_LENGTH];
+	struct
+	{
+		byte x3f;
+		byte len;
+		byte ip[4];
+		byte time[3];
+		byte b[2];
+	};
+} mes;
 
 int main(int argc, char* argv[])
 {
@@ -15,7 +28,7 @@ int main(int argc, char* argv[])
 	char server_reply[MAX_PROTOCOL_LENGTH];
 	int recv_size;
 	queue_t* queue = create_queue(MAX_PROTOCOL_LENGTH * 3);
-	uint8_t message[MAX_PROTOCOL_LENGTH];
+	uint8_t value;
 
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 	{
@@ -55,24 +68,37 @@ int main(int argc, char* argv[])
 		}
 
 		// message starts with 0x3f!
-		while (queue_watch(queue, &message[0]) && message[0] != 0x3f)
+		while (queue_watch(queue, &value, 0) && value != 0x3f)
 		{
-			queue_dequeue(queue, &message[0]);
+			queue_dequeue(queue, &value);
 		}
 		
-		if (queue->length >= MAX_PROTOCOL_LENGTH)
+		value = 0;
+		if (queue_watch(queue, &value, 1) && value <= queue->length)
 		{
 			for (int i = 0; i < MAX_PROTOCOL_LENGTH; i++)
 			{
-				queue_dequeue(queue, &message[i]);
+				queue_dequeue(queue, &mes.data[i]);
+			}
+
+			uint8_t crc = 0;
+			for (uint8_t i = 0; i < mes.len - 1; ++i)
+			{
+				crc ^= mes.data[i];
+			}
+			if (crc != mes.data[mes.len - 1])
+			{
+				printf("Invalid message\n");
+				continue;
 			}
 
 			printf("IP: %d.%d.%d.%d\tTIME: %02d:%02d:%02d",
-				message[2], message[3], message[4], message[5],
-				message[6], message[7], message[8]);
-			if (message[0] != 0x3f || message[1] != 0xe4 || message[9] != 0xf3)
+				mes.ip[0], mes.ip[1], mes.ip[2], mes.ip[3],
+				mes.time[0], mes.time[1], mes.time[2]);
+			size_t payload_size = mes.len - 10;
+			for (size_t i = 0; i < payload_size; ++i)
 			{
-				printf("\tInvalid data");
+				printf("\tV%d: %d", i + 1, mes.b[i]);
 			}
 			printf("\n");
 		}

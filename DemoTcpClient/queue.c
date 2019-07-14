@@ -64,13 +64,17 @@ bool queue_dequeue(queue_t* q, value_type* elem)
 	return true;
 }
 
-bool queue_watch(queue_t* q, value_type* elem)
+bool queue_watch(queue_t* q, value_type* elem, size_t idx)
 {
-	if (q->length == 0)
+	if (idx >= q->length)
 	{
 		return false;
 	}
-	*elem = q->arr[q->start];
+
+	*elem = q->arr[q->start + idx < q->max_length ? 
+		q->start + idx : 
+		q->max_length - q->start - idx];
+
 	return true;
 }
 
