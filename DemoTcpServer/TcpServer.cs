@@ -15,7 +15,7 @@ namespace DemoTcpServer
 
         public TcpServer(int port)
         {
-            IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+            IPAddress localAddr = IPAddress.Parse("0.0.0.0");
             _listener = new TcpListener(localAddr, port);
         }
 
@@ -63,7 +63,7 @@ namespace DemoTcpServer
                         // отправка сообщения
                         stream.Write(data, 0, data.Length);
 
-                        Thread.Sleep(100);
+                        Thread.Sleep(200);
 
                         var dt = DateTime.Now;
                         data = new byte[] { (byte)dt.Hour, (byte)dt.Minute, (byte)dt.Second, 0xf3 };
@@ -72,7 +72,7 @@ namespace DemoTcpServer
                     }
                     catch (Exception) { }
 
-                    Thread.Sleep(500);
+                    Thread.Sleep(800);
                 }
 
                 try
